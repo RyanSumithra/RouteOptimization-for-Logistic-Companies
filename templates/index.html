@@ -10,50 +10,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Arial', sans-serif;
-        }
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            margin-top: 30px;
-        }
-        #map {
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .weather-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background-color: #e9ecef;
-            padding: 10px;
-        }
-        .route-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border-left: 4px solid transparent;
-        }
-        .route-card:hover, .route-card.selected {
-            background-color: #f8f9fa;
-            border-left-color: #007bff;
-        }
-        #loading {
-            background-color: rgba(255, 255, 255, 0.9);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+        body { background-color: #f4f6f9; font-family: 'Arial', sans-serif; }
+        .container { background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); padding: 30px; margin-top: 30px; }
+        #map { border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); height: 500px; }
+        .route-card { transition: all 0.3s ease; cursor: pointer; border-left: 4px solid transparent; }
+        .route-card:hover, .route-card.selected { background-color: #f8f9fa; border-left-color: #007bff; }
+        #loading { background-color: rgba(255, 255, 255, 0.9); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
@@ -61,7 +23,7 @@
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Calculating routes and weather...</p>
+        <p class="mt-3">Calculating routes...</p>
     </div>
 
     <div class="container">
@@ -95,126 +57,130 @@
 
         <div class="row mt-4">
             <div class="col-md-4">
-                <div id="weather-info" class="card mb-3 shadow-sm" style="display:none;">
-                    <div class="card-header bg-light">
-                        <i class="fas fa-cloud-sun me-2"></i>Weather Information
-                    </div>
-                    <div class="card-body">
-                        <div class="start-weather mb-3">
-                            <h5>Start Location</h5>
-                            <div id="start-weather-details"></div>
-                        </div>
-                        <div class="end-weather">
-                            <h5>Destination</h5>
-                            <div id="end-weather-details"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="route-options" class="card shadow-sm">
                     <div class="card-header bg-light">
                         <i class="fas fa-route me-2"></i>Route Options
                     </div>
-                    <div class="card-body" id="routes-container">
-                    </div>
+                    <div class="card-body" id="routes-container"></div>
                 </div>
             </div>
 
             <div class="col-md-8">
-                <div id="map" class="shadow-sm" style="width:100%; height:500px;"></div>
+                <div id="map"></div>
             </div>
         </div>
     </div>
 
     <script>
         let map, routeLayers = [];
+        const ROUTE_COLORS = ['#007AFF', '#28a745', '#dc3545', '#ffc107'];
+
+        function resetMap() {
+            // Remove all existing layers
+            routeLayers.forEach(layer => {
+                if (map.getLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+                if (map.getSource(layer)) {
+                    map.removeSource(layer);
+                }
+            });
+            routeLayers = [];
+        }
 
         function initMap() {
+            // Destroy existing map if it exists
+            if (map) {
+                map.remove();
+            }
+
             map = tt.map({
                 key: "JSIKlxOiGNb6ZSNMieT31BOtGbGeKktv",
                 container: "map",
-                center: [72.8777, 19.0760],  // Mumbai center
+                center: [72.8777, 19.0760],
                 zoom: 10
             });
-
-            // Add navigation controls to map
             map.addControl(new tt.NavigationControl());
         }
 
-        function displayWeather(weather, elementId) {
-            if (!weather || !weather.current) return;
+        function drawRoutes(routes) {
+            // Reset existing routes
+            resetMap();
 
-            const current = weather.current;
-            $(`#${elementId}`).html(`
-                <div class="d-flex align-items-center">
-                    <img src="${current.condition.icon}" class="weather-icon me-3">
-                    <div>
-                        <h6 class="mb-1">${current.temp_c}°C ${current.condition.text}</h6>
-                        <p class="text-muted mb-0">Humidity: ${current.humidity}%</p>
-                    </div>
-                </div>
-            `);
-        }
+            routes.forEach((route, index) => {
+                const routeCoordinates = route.route.map(p => [p.longitude, p.latitude]);
+                const layerId = `route-${index}`;
 
-        function displayRoute(route, index) {
-            const distanceKm = (route.summary.lengthInMeters / 1000).toFixed(2);
-            const travelTime = Math.round(route.summary.travelTimeInSeconds / 60);
+                // Add source
+                map.addSource(layerId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: routeCoordinates
+                        }
+                    }
+                });
 
-            return `
-                <div class="route-card card mb-2 border-0" data-route-index="${index}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Route ${index + 1}</h6>
-                                <small class="text-muted">
-                                    <i class="fas fa-road me-1"></i>${distanceKm} km
-                                    <i class="fas fa-clock ms-2 me-1"></i>${travelTime} mins
-                                </small>
-                            </div>
-                            <div class="badge bg-success">₹${route.fuel_cost}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
+                // Add layer
+                map.addLayer({
+                    id: layerId,
+                    type: 'line',
+                    source: layerId,
+                    paint: {
+                        'line-color': ROUTE_COLORS[index % ROUTE_COLORS.length],
+                        'line-width': 6,
+                        'line-opacity': 0.6
+                    }
+                });
 
-        function drawRoute(coordinates, color = '#007AFF') {
-            routeLayers.forEach(layer => map.removeLayer(layer));
-            routeLayers = [];
-
-            const routeGeometry = {
-                type: 'Feature',
-                geometry: {
-                    type: 'LineString',
-                    coordinates: coordinates
-                },
-                properties: {}
-            };
-
-            map.addLayer({
-                'id': 'route',
-                'type': 'line',
-                'source': {
-                    'type': 'geojson',
-                    'data': routeGeometry
-                },
-                'layout': {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                'paint': {
-                    'line-color': color,
-                    'line-width': 6,
-                    'line-opacity': 0.75
-                }
+                routeLayers.push(layerId);
             });
 
-            // Fit map to route
-            const bounds = coordinates.reduce((bounds, coord) => {
-                return bounds.extend(coord);
-            }, new tt.LngLatBounds(coordinates[0], coordinates[0]));
+            if (routes.length) {
+                const firstRouteCoordinates = routes[0].route.map(p => [p.longitude, p.latitude]);
+                const bounds = new tt.LngLatBounds(firstRouteCoordinates[0], firstRouteCoordinates[0]);
+                firstRouteCoordinates.forEach(coord => bounds.extend(coord));
+                map.fitBounds(bounds, { padding: 50 });
+            }
+        }
 
-            map.fitBounds(bounds, { padding: 50 });
+        function displayRouteOptions(routes) {
+            const container = $("#routes-container").empty();
+            routes.forEach((route, index) => {
+                const distanceKm = (route.summary.lengthInMeters / 1000).toFixed(2);
+                const travelTime = Math.round(route.summary.travelTimeInSeconds / 60);
+                
+                const routeCard = $(`
+                    <div class="route-card card mb-2 border-0" data-route-index="${index}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Route ${index + 1}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-road me-1"></i>${distanceKm} km
+                                        <i class="fas fa-clock ms-2 me-1"></i>${travelTime} mins
+                                    </small>
+                                </div>
+                                <div class="badge bg-success">₹${route.fuel_cost}</div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                routeCard.on('click', function() {
+                    $(".route-card").removeClass('selected');
+                    $(this).addClass('selected');
+
+                    routeLayers.forEach((layerId, i) => {
+                        map.setPaintProperty(layerId, 'line-opacity', i === index ? 0.9 : 0.4);
+                        map.setPaintProperty(layerId, 'line-width', i === index ? 8 : 6);
+                    });
+                });
+
+                container.append(routeCard);
+            });
         }
 
         $(document).ready(function() {
@@ -224,8 +190,6 @@
                 e.preventDefault();
                 $("#loading").show();
                 $("#error").hide();
-                $("#weather-info").hide();
-                $("#routes-container").empty();
 
                 $.ajax({
                     url: "/calculate_route",
@@ -242,28 +206,9 @@
                             return;
                         }
 
-                        $("#weather-info").show();
-                        displayWeather(response.weather.start, "start-weather-details");
-                        displayWeather(response.weather.end, "end-weather-details");
-
-                        response.routes.forEach((route, index) => {
-                            $("#routes-container").append(displayRoute(route, index));
-                        });
-
-                        if (response.routes.length > 0) {
-                            const routeCoordinates = response.routes[0].route.map(p => [p.longitude, p.latitude]);
-                            drawRoute(routeCoordinates);
-                            $(".route-card:first").addClass('selected');
-                        }
-
-                        $(".route-card").click(function() {
-                            const index = $(this).data('route-index');
-                            $(".route-card").removeClass('selected');
-                            $(this).addClass('selected');
-
-                            const routeCoordinates = response.routes[index].route.map(p => [p.longitude, p.latitude]);
-                            drawRoute(routeCoordinates);
-                        });
+                        drawRoutes(response.routes);
+                        displayRouteOptions(response.routes);
+                        $(".route-card:first").trigger('click');
                     },
                     error: function() {
                         $("#loading").hide();
