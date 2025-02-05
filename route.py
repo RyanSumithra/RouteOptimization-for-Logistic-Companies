@@ -1,9 +1,6 @@
 import requests
 import logging
-from datetime import datetime
 from flask import Flask, render_template, request, jsonify
-
-
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -43,12 +40,22 @@ def get_weather(lat, lon):
     params = {
         'key': WEATHER_API_KEY,
         'q': f"{lat},{lon}",
-        'days': 3
+        'days': 1
     }
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
-        return response.json()
+        weather_data = response.json()
+        # Extract only the current weather information
+        current_weather = weather_data.get('current', {})
+        return {
+            'condition': current_weather.get('condition', {}).get('text', 'N/A'),
+            'temperature_c': current_weather.get('temp_c', 'N/A'),
+            'temperature_f': current_weather.get('temp_f', 'N/A'),
+            'wind_kph': current_weather.get('wind_kph', 'N/A'),
+            'humidity': current_weather.get('humidity', 'N/A'),
+            # Add more details as needed
+        }
     except Exception as e:
         logging.error(f"Weather API error: {e}")
         return None
@@ -60,8 +67,8 @@ def calculate_fuel_cost(distance_km):
     return fuel_consumed * FUEL_PRICE_PER_LITER
 
 
-def calculate_routes(start_lat, start_lon, end_lat, end_lon):
-    url = f'https://api.tomtom.com/routing/1/calculateRoute/{start_lat},{start_lon}:{end_lat},{end_lon}/json'
+def calculate_routes(waypoints):
+    url = f'https://api.tomtom.com/routing/1/calculateRoute/{":".join(waypoints)}/json'
     params = {
         'key': TOMTOM_API_KEY,
         'routeType': 'fastest',
@@ -101,6 +108,39 @@ def index():
     return render_template('index.html', tomtom_api_key=TOMTOM_API_KEY)
 
 
+@app.route('/autocomplete', methods=['GET'])
+def autocomplete():
+    query = request.args.get('query', '')
+    if not query:
+        return jsonify([])
+
+    url = f'https://api.tomtom.com/search/2/autocomplete/{query}.json'
+    params = {
+        'key': TOMTOM_API_KEY,
+        'limit': 5  # Adjust as needed
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        results = []
+        if 'results' in data:
+            for result in data['results']:
+                results.append({
+                    'label': result.get('address', {}).get('freeformAddress',
+                                                             result.get('poi', {}).get('name', 'Unknown')),
+                    'value': result.get('address', {}).get('freeformAddress',
+                                                             result.get('poi', {}).get('name', 'Unknown'))
+                })
+        return jsonify(results)
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Autocomplete error: {e}")
+        return jsonify([])
+
+
 @app.route('/calculate_route', methods=['POST'])
 def calculate_route():
     start = request.form.get('start')
@@ -117,14 +157,14 @@ def calculate_route():
             'message': 'Could not find one or both locations'
         })
 
-    # Get weather information for both locations
+    waypoints = [f"{start_location['lat']},{start_location['lon']}",
+                 f"{end_location['lat']},{end_location['lon']}"]
+
+    # Get weather information for start and end
     start_weather = get_weather(start_location['lat'], start_location['lon'])
     end_weather = get_weather(end_location['lat'], end_location['lon'])
 
-    routes = calculate_routes(
-        start_location['lat'], start_location['lon'],
-        end_location['lat'], end_location['lon']
-    )
+    routes = calculate_routes(waypoints)
 
     if not routes:
         return jsonify({
