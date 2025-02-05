@@ -8,205 +8,158 @@
     <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/maps/maps-web.min.js"></script>
     <link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/maps/maps.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+
     <style>
-        * {
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            background-color: #f4f4f4;
+            display: flex; /* Use flexbox to split the page into sidebar and main content */
         }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f4f6f9;
-            height: 100vh;
-            display: flex;
-        }
-
+        /* Sidebar Styling */
         .sidebar {
-            width: 80px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 24px 0;
+            width: 60px;
+            background-color: #2c3e50;
+            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 32px;
-            z-index: 100;
+            padding-top: 20px;
+            height: 100vh; /* Full height */
         }
 
         .logo {
-            width: 48px;
-            height: 48px;
-            background: #2563eb;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            font-size: 2em;
         }
 
         .nav-item {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
+            padding: 15px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
         .nav-item:hover {
-            background: #e2e8f0;
-            color: #2563eb;
+            background-color: #34495e;
+        }
+
+        .nav-item i {
+            font-size: 1.5em;
         }
 
         .nav-item.active {
-            background: #bfdbfe;
-            color: #2563eb;
+            background-color: #34495e;
         }
 
+        /* Main Content Styling */
         .main-content {
-            flex: 1;
-            padding: 32px;
-            position: relative;
+            flex: 1; /* Occupies the rest of the space */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
-            max-width: 1400px;
-            margin: 0 auto 32px;
+            margin-bottom: 20px;
         }
 
         .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1e293b;
+            font-size: 2em;
+            color: #333;
         }
 
-        .header-buttons {
-            display: flex;
-            gap: 16px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .btn-outline {
-            color: #2563eb;
-            background: transparent;
-        }
-
-        .btn-outline:hover {
-            background: #bfdbfe;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
+        .header-buttons button {
+            margin-left: 10px;
         }
 
         .content-wrapper {
-            max-width: 1400px;
-            margin: 0 auto;
             display: flex;
-            gap: 24px;
-            height: calc(100vh - 120px);
+            flex: 1; /* Take up remaining space */
+            min-height: 0; /* Important for flexbox */
         }
 
+        /* Search Panel Styling */
         .search-panel {
-            width: 400px;
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .search-container {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
         }
 
         .search-box {
-            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 5px;
         }
 
         .search-box i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
+            margin-right: 8px;
+            color: #777;
         }
 
         .search-input {
-            width: 100%;
-            padding: 12px 12px 12px 48px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            border: none;
+            padding: 8px;
+            flex: 1;
+            font-size: 1em;
         }
 
         .search-input:focus {
             outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
         }
 
+        /* Map Container Styling */
         .map-container {
-            flex: 1;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            overflow: hidden;
+            flex: 1; /* Take up remaining space */
+            display: flex;
+            min-height: 0; /* Important for flexbox */
         }
 
         #map {
             width: 100%;
-            height: 100%;
+            height: 100%; /* Make sure the map fills its container */
         }
 
-        .routes-container {
-            margin-top: 24px;
+        /* Route Options Styling */
+        #routes-container {
+            margin-top: 20px;
         }
 
         .route-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border-left: 4px solid transparent;
+            padding: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
         .route-card:hover {
-            transform: translateX(5px);
-            border-left-color: #2563eb;
-            background: #f8fafc;
+            background-color: #eee;
         }
 
         .route-card.selected {
-            border-left-color: #2563eb;
-            background: #f0f7ff;
+            background-color: #e0e0e0;
         }
 
         .route-info {
@@ -216,40 +169,81 @@
         }
 
         .route-details {
-            font-size: 14px;
-            color: #64748b;
+            color: #555;
         }
 
         .route-cost {
-            background: linear-gradient(45deg, #22c55e, #16a34a);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 14px;
+            font-weight: bold;
+            color: #4CAF50;
         }
 
+        /* Buttons */
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-outline:hover {
+            background-color: #f0f8ff;
+        }
+
+        .remove-checkpoint {
+            margin-left: 5px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+
+        .remove-checkpoint:hover {
+            background-color: #c82333;
+        }
+
+        /* Loading Indicator */
         #loading {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
             justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
             z-index: 1000;
-            backdrop-filter: blur(5px);
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2563eb;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
         }
 
         @keyframes spin {
@@ -257,23 +251,51 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Error Message */
         #error {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #fee2e2;
-            border-left: 4px solid #dc2626;
-            padding: 16px;
-            border-radius: 8px;
-            color: #991b1b;
-            z-index: 1000;
+            color: red;
+            margin-top: 10px;
             display: none;
-            animation: slideIn 0.3s ease;
         }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+        /* Autocomplete Styling */
+        .ui-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            display: none;
+            float: left;
+            min-width: 160px;
+            padding: 5px 0;
+            margin: 2px 0 0 2px;
+            list-style: none;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border: 1px solid rgba(0, 0, 0, .2);
+            border-radius: 5px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+            background-clip: padding-box;
+           
+        }
+
+        .ui-autocomplete > li {
+            display: block;
+            padding: 3px 20px;
+            clear: both;
+            font-weight: normal;
+            line-height: 1.42857143;
+            color: #333333;
+            white-space: nowrap;
+        }
+
+        .ui-state-hover,
+        .ui-state-active {
+            color: #ffffff;
+            text-decoration: none;
+            background-color: #337ab7;
+            border-color: #2e6da4;
+            background-image: none;
         }
     </style>
 </head>
@@ -402,12 +424,15 @@
             }
         }
 
-        function displayRouteOptions(routes) {
+        function displayRouteOptions(routes, weather) {
             const container = $("#routes-container").empty();
             
             routes.forEach((route, index) => {
                 const distanceKm = (route.summary.lengthInMeters / 1000).toFixed(2);
                 const travelTime = Math.round(route.summary.travelTimeInSeconds / 60);
+
+                const startWeather = weather.start;
+                const endWeather = weather.end;
                 
                 const routeCard = $(`
                     <div class="route-card" data-route-index="${index}">
@@ -420,6 +445,18 @@
                                 </div>
                             </div>
                             <div class="route-cost">₹${route.fuel_cost}</div>
+                        </div>
+
+                        <div class="weather-info">
+                            <h4>Weather</h4>
+                            <div class="weather-details">
+                                <div>
+                                    <strong>Start:</strong> ${startWeather.condition}, ${startWeather.temperature_c}°C
+                                </div>
+                                <div>
+                                    <strong>End:</strong> ${endWeather.condition}, ${endWeather.temperature_c}°C
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `);
@@ -441,17 +478,59 @@
         $(document).ready(function() {
             initMap();
 
+            // Autocomplete function
+            function setupAutocomplete(inputElement) {
+                $(inputElement).autocomplete({
+                    source: function (request, response) {
+                        $.ajax({
+                            url: "/autocomplete",
+                            dataType: "json",
+                            data: {
+                                query: request.term
+                            },
+                            success: function (data) {
+                                response($.map(data, function (item) {
+                                    return {
+                                        label: item.label,  // The text to display in the suggestion list
+                                        value: item.value   // The value to be inserted into the input field
+                                    };
+                                }));
+                            }
+                        });
+                    },
+                    minLength: 2, // Trigger autocomplete after 2 characters
+                    select: function (event, ui) {
+                        // When a suggestion is selected, update the input field with the selected value
+                        $(this).val(ui.item.value);
+                        return false;
+                    }
+                }).autocomplete("instance")._renderItem = function (ul, item) {
+                    // Customize the display of each item in the autocomplete list
+                    return $("<li>")
+                        .append("<div>" + item.label + "</div>")
+                        .appendTo(ul);
+                };
+            }
+
+            setupAutocomplete("#start");
+            setupAutocomplete("#end");
+
+
+            // Calculate Route with Checkpoints
             $("#calculate").on('click', function(e) {
                 e.preventDefault();
                 $("#loading").show();
                 $("#error").hide();
 
+                const start = $("#start").val();
+                const end = $("#end").val();
+
                 $.ajax({
                     url: "/calculate_route",
                     type: "POST",
                     data: {
-                        start: $("#start").val(),
-                        end: $("#end").val()
+                        start: start,
+                        end: end,
                     },
                     success: function(response) {
                         $("#loading").hide();
@@ -462,7 +541,7 @@
                         }
 
                         drawRoutes(response.routes);
-                        displayRouteOptions(response.routes);
+                        displayRouteOptions(response.routes, response.weather);
                         $(".route-card:first").trigger('click');
                     },
                     error: function() {
